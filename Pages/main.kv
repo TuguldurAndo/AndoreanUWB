@@ -1,0 +1,39 @@
+ScreenManager:
+    MainScreen:
+        id: main_screen
+
+<MainScreen>:
+    name:"Main"
+    FloatLayout:
+        id: main_layout
+        size_hint: .6, .8
+        pos_hint: {'x': .05, 'y': .1}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+
+    FloatLayout:
+        size_hint: .2, .2
+        pos_hint: {'x': .7, 'y': .4}
+
+        Button:
+            id: add_widget_btn
+            pos_hint: {'x': 0, 'y': 0}
+            size_hint: .7, .3
+            text: 'Start'
+            on_press: 
+                root.add_anchor()
+
+        Button:
+            id: rst_widget
+            pos_hint: {'x': 0, 'y': 0.4}
+            size_hint: .7, .3
+            text: 'Reset'
+            on_press: 
+                root.rst_anchor()
+
+
