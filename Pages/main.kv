@@ -2,12 +2,18 @@ ScreenManager:
     MainScreen:
         id: main_screen
 
+<SpinnerOption>:
+    color: 0,0,0,1
+    background_normal: ''
+    background_color: .9, .9, .9, .3
+    font_size: 25
+
 <MainScreen>:
     name:"Main"
     FloatLayout:
         id: main_layout
         size_hint: .6, .8
-        pos_hint: {'x': .05, 'y': .1}
+        pos_hint: {'x': .025, 'y': .175}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -17,15 +23,52 @@ ScreenManager:
                 radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
 
     FloatLayout:
+        size_hint: .325, .3
+        pos_hint: {'x': .65, 'y': .675}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+
+        Label:
+            size: 1,1
+            pos_hint: {'x': -.35, 'y': .44}
+            text: "Anchor info"
+            color: 0,0,0,0.6
+            bold: True
+
+
+    FloatLayout:
+        size_hint: .325, .3
+        pos_hint: {'x': .65, 'y': .35}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+
+        Label:
+            size: 1,1
+            pos_hint: {'x': -.375, 'y': .44}
+            text: "Tag info"
+            color: 0,0,0,0.6
+            bold: True
+
+    FloatLayout:
         size_hint: .2, .2
-        pos_hint: {'x': .7, 'y': .4}
+        pos_hint: {'x': .7, 'y': .1}
 
         Button:
             id: add_widget_btn
             pos_hint: {'x': 0, 'y': 0}
             size_hint: .7, .3
             text: 'Start'
-            on_press: 
+            on_press:
                 root.add_anchor()
 
         Button:
@@ -33,7 +76,86 @@ ScreenManager:
             pos_hint: {'x': 0, 'y': 0.4}
             size_hint: .7, .3
             text: 'Reset'
-            on_press: 
+            on_press:
                 root.rst_anchor()
+
+    FloatLayout:
+        size_hint: .4, .075
+        pos_hint: {'x': .025, 'y': .075}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+
+        Spinner:
+            id: select_port
+            size_hint: .5, .7
+            color: 1,1,1,1
+            background_normal: ''
+            background_color: 0,0,0,0
+            pos_hint: {'center': (.275, .475)}
+            text: 'Please select a port'
+            font_size: 25
+            on_press:
+                root.showAvailablePorts()
+            on_text:
+                if self.text != "Please select a port":root.get_selected_serial(self.text)
+            canvas.before:
+                Color:
+                    rgba: rgba('#4a4a4a')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [20]
+
+        Spinner:
+            id: select_band_width
+            size_hint: .3, .7
+            color: 1,1,1,1
+            background_normal: ''
+            background_color: 0,0,0,0
+            text_autoupdate: True
+            pos_hint: {'center': (.7, .475)}
+            values: '9600', '14400', '19200', '28800', '31250', '38400', '57600', '115200'
+            text: 'Selet baud rate'
+            on_press:
+                root.showAvailablePorts()
+            canvas.before:
+                Color:
+                    rgba: rgba('#61b0ff')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [20]
+
+        Label:
+            id: port_status_connected
+            opacity: 1
+            size_hint: .07, .45
+            pos_hint: {'x': .885, 'y': .25}
+            canvas:
+                Color:
+                    rgba: rgba('#1ebd53')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [70]
+
+        Label:
+            id: port_status_unconnected
+            opacity: 1
+            size_hint: .07, .45
+            pos_hint: {'x': .885, 'y': .25}
+            canvas:
+                Color:
+                    rgba: rgba('#d1d1d1')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [70]
+
 
 
