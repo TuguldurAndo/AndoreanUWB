@@ -11,7 +11,6 @@ ScreenManager:
 <MainScreen>:
     name:"Main"
     FloatLayout:
-        id: main_layout
         size_hint: .6, .8
         pos_hint: {'x': .025, 'y': .175}
         canvas:
@@ -21,6 +20,11 @@ ScreenManager:
                 size: self.size
                 pos: self.pos
                 radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+
+        FloatLayout:
+            id: main_layout
+            size_hint: .95, .95
+            pos_hint: {'x': 0.025, 'y': 0.025}
 
     FloatLayout:
         size_hint: .325, .3
@@ -32,7 +36,29 @@ ScreenManager:
                 size: self.size
                 pos: self.pos
                 radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
-
+        GridLayout:
+            size_hint: 1, 1
+            pos_hint: {'x': -.01, 'y': .3}
+            height: 25
+            cols: 7
+            Label:
+                text: "ID"
+                color: 0,0,0,1
+            Label:
+                text: "X(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Y(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Z(m)"
+                color: 0,0,0,1
+                canvas.before:
+                    Color:
+                        rgba: 0,0,0,1
+                    Line:
+                        width: 1.5
+                        points: self.center_x - 530,self.center_y - 30,self.center_x+50,self.center_y - 30
         Label:
             size: 1,1
             pos_hint: {'x': -.35, 'y': .44}
@@ -40,6 +66,15 @@ ScreenManager:
             color: 0,0,0,0.6
             bold: True
 
+        ScrollView:
+            size_hint: 1, .7
+            pos_hint: {'x': 0, 'y': 0.03}
+            GridLayout:
+                cols: 4
+                id: anchor_info_table
+                size_hint_y: None
+                height: self.minimum_height
+                row_default_height: 60
 
     FloatLayout:
         size_hint: .325, .3
@@ -51,6 +86,42 @@ ScreenManager:
                 size: self.size
                 pos: self.pos
                 radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+        GridLayout:
+            size_hint: 1, 1
+            pos_hint: {'x': 0, 'y': 0.3}
+            height: 1
+            cols: 5
+            Label:
+                text: "ID"
+                color: 0,0,0,1
+            Label:
+                text: "X(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Y(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Z(m)"
+                color: 0,0,0,1
+            Label:
+                text:"PWR"
+                color: 0,0,0,1
+                canvas.before:
+                    Color:
+                        rgba: 0,0,0,1
+                    Line:
+                        width: 1.5
+                        points: self.center_x - 540,self.center_y - 30,self.center_x+40,self.center_y - 30
+
+        ScrollView:
+            size_hint: 1, .7
+            pos_hint: {'x': 0, 'y': 0.03}
+            GridLayout:
+                cols: 5
+                id: tag_info_table
+                size_hint_y: None
+                height: self.minimum_height  #<<<<<<<<<<<<<<<<<<<<
+                row_default_height: 60
 
         Label:
             size: 1,1
@@ -64,98 +135,37 @@ ScreenManager:
         pos_hint: {'x': .7, 'y': .1}
 
         Button:
-            id: add_widget_btn
-            pos_hint: {'x': 0, 'y': 0}
-            size_hint: .7, .3
-            text: 'Start'
-            on_press:
-                root.add_anchor()
-
-        Button:
             id: rst_widget
             pos_hint: {'x': 0, 'y': 0.4}
             size_hint: .7, .3
             text: 'Reset'
             on_press:
                 root.rst_anchor()
-
+#----------------------------------------- Serial port section --------------------------------------
     FloatLayout:
-        size_hint: .4, .075
-        pos_hint: {'x': .025, 'y': .075}
-        canvas:
-            Color:
-                rgba: rgba("#ffffff")
-            RoundedRectangle:
-                size: self.size
-                pos: self.pos
-                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
-
-        Spinner:
-            id: select_port
-            size_hint: .5, .7
-            color: 1,1,1,1
-            background_normal: ''
+        size_hint: .1, .075
+        pos_hint: {'x': .535, 'y': .1}
+        # canvas:
+        #     Color:
+        #         rgba: rgba("#ffffff")
+        #     RoundedRectangle:
+        #         size: self.size
+        #         pos: self.pos
+        #         radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+#---------------------------------------------------------------------------------------------------
+        Button:
             background_color: 0,0,0,0
-            pos_hint: {'center': (.275, .475)}
-            text: 'Please select a port'
-            font_size: 25
+            id: connect_btn
+            size_hint: .8, .7
+            pos_hint: {'x': .1, 'y': .125}
+            text: 'Connect'
             on_press:
-                root.showAvailablePorts()
-            on_text:
-                if self.text != "Please select a port":root.get_selected_serial(self.text)
+                root.connect_spi()
             canvas.before:
                 Color:
-                    rgba: rgba('#4a4a4a')
+                    rgba: rgba('#03befc')
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
-                    radius: [20]
-
-        Spinner:
-            id: select_band_width
-            size_hint: .3, .7
-            color: 1,1,1,1
-            background_normal: ''
-            background_color: 0,0,0,0
-            text_autoupdate: True
-            pos_hint: {'center': (.7, .475)}
-            values: '9600', '14400', '19200', '28800', '31250', '38400', '57600', '115200'
-            text: 'Selet baud rate'
-            on_press:
-                root.showAvailablePorts()
-            canvas.before:
-                Color:
-                    rgba: rgba('#61b0ff')
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [20]
-
-        Label:
-            id: port_status_connected
-            opacity: 1
-            size_hint: .07, .45
-            pos_hint: {'x': .885, 'y': .25}
-            canvas:
-                Color:
-                    rgba: rgba('#1ebd53')
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [70]
-
-        Label:
-            id: port_status_unconnected
-            opacity: 1
-            size_hint: .07, .45
-            pos_hint: {'x': .885, 'y': .25}
-            canvas:
-                Color:
-                    rgba: rgba('#d1d1d1')
-                RoundedRectangle:
-                    size: self.size
-                    pos: self.pos
-                    radius: [70]
-
-
+                    radius: [30]
 
