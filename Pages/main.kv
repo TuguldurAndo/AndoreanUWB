@@ -57,8 +57,8 @@ ScreenManager:
                     Color:
                         rgba: 0,0,0,1
                     Line:
-                        width: 1.5
-                        points: self.center_x - 530,self.center_y - 30,self.center_x+50,self.center_y - 30
+                        width: 1.1
+                        points: self.center_x - 210,self.center_y - 15,self.center_x+30,self.center_y - 15
         Label:
             size: 1,1
             pos_hint: {'x': -.35, 'y': .44}
@@ -68,13 +68,13 @@ ScreenManager:
 
         ScrollView:
             size_hint: 1, .7
-            pos_hint: {'x': 0, 'y': 0.03}
+            pos_hint: {'x': 0, 'y': 0}
             GridLayout:
                 cols: 4
                 id: anchor_info_table
                 size_hint_y: None
                 height: self.minimum_height
-                row_default_height: 60
+                row_default_height: 30
 
     FloatLayout:
         size_hint: .325, .3
@@ -110,18 +110,18 @@ ScreenManager:
                     Color:
                         rgba: 0,0,0,1
                     Line:
-                        width: 1.5
-                        points: self.center_x - 540,self.center_y - 30,self.center_x+40,self.center_y - 30
+                        width: 1.1
+                        points: self.center_x - 220,self.center_y - 15,self.center_x+15,self.center_y - 15
 
         ScrollView:
             size_hint: 1, .7
-            pos_hint: {'x': 0, 'y': 0.03}
+            pos_hint: {'x': 0, 'y': 0}
             GridLayout:
                 cols: 5
                 id: tag_info_table
                 size_hint_y: None
                 height: self.minimum_height  #<<<<<<<<<<<<<<<<<<<<
-                row_default_height: 60
+                row_default_height: 30
 
         Label:
             size: 1,1
@@ -129,43 +129,57 @@ ScreenManager:
             text: "Tag info"
             color: 0,0,0,0.6
             bold: True
-
-    FloatLayout:
-        size_hint: .2, .2
-        pos_hint: {'x': .7, 'y': .1}
-
-        Button:
-            id: rst_widget
-            pos_hint: {'x': 0, 'y': 0.4}
-            size_hint: .7, .3
-            text: 'Reset'
-            on_press:
-                root.rst_anchor()
 #----------------------------------------- Serial port section --------------------------------------
     FloatLayout:
         size_hint: .1, .075
         pos_hint: {'x': .535, 'y': .1}
-        # canvas:
-        #     Color:
-        #         rgba: rgba("#ffffff")
-        #     RoundedRectangle:
-        #         size: self.size
-        #         pos: self.pos
-        #         radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
 #---------------------------------------------------------------------------------------------------
         Button:
             background_color: 0,0,0,0
             id: connect_btn
-            size_hint: .8, .7
-            pos_hint: {'x': .1, 'y': .125}
+            size_hint: (.8, .7) if self.text == "Connect"  else (.9, .7)
+            pos_hint: {'x': .0, 'y': .125}
             text: 'Connect'
+            background_down: ""
             on_press:
                 root.connect_spi()
             canvas.before:
                 Color:
-                    rgba: rgba('#03befc')
+                    rgba: rgba('#03befc') if self.text == "Connect"  else rgba('#b8b8b8')
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
-                    radius: [30]
+                    radius: [10]
+
+        Button:
+            id: rst_widget
+            background_color: 0,0,0,0
+            pos_hint: {'x': -0.9, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'Stop'
+            on_press:
+                root.rst_anchor()
+            canvas.before:
+                Color:
+                    rgba: rgba('#f54e42')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+
+        Button:
+            id: in_danger
+            background_color: 0,0,0,0
+            pos_hint: {'x': -1.8, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'DANGER'
+            on_press:
+                root.danger()
+            canvas.before:
+                Color:
+                    rgba: rgba('#eb8f34') if self.text == "DANGER" else rgba("#adadad")
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
 
