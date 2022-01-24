@@ -42,14 +42,14 @@ Sigma_0 = np.array([[0.1, 0],
                      [0, 0.1]])
 u_t = np.array([1, 1]) # we assume constant control input
 
-A = np.array([[0.9, 0],
-              [0, 0.9]])
-B = np.array([[0.26, 0],
-              [0, 0.5]])
-Q = np.array([[0.3, 0],
+A = np.array([[0.81, 0],
+              [0, 0.81]])
+B = np.array([[0.3, 0],
               [0, 0.3]])
-H = np.array([[0.9, 0],
-              [0, 0.7]])
+Q = np.array([[0.2, 0],
+              [0, 0.2]])
+H = np.array([[1, 0],
+              [0, 1]])
 R = np.array([[1, 0],
               [0, 1]])
 
@@ -108,15 +108,7 @@ class MainScreen(Screen):
         self.filter_y = 0
         self.filter_counter = 0
         self.sensor_noise = 0
-        self.previous_x = 1
-        self.previous_y = 1
-        self.error = 1
-        self.kalman_gain = 0
-        self.current_x = 0
-        self.current_y = 0
-        self.q = 0.15
-        self.p = self.error + self.q
-        self.r = 0.1
+
 
     def rst_anchor(self, *args):
         global counter_1, counter
@@ -226,19 +218,6 @@ class MainScreen(Screen):
 
 
                                 #------------------------------------ Kalman ----------------------------------------------
-                                # #---------------update-----------------------
-                                # self.kalman_gain = self.p / (self.p) + self.r
-                                # self.current_x = self.previous_x + self.kalman_gain * (item.x - self.previous_x)
-                                # self.current_y = self.previous_y + self.kalman_gain * (item.y - self.previous_y)
-                                # self.p = (1 - self.kalman_gain) * self.p
-                                # #---------------predict---------------------
-                                # self.previous_x = self.current_x
-                                # self.previous_x = self.current_y
-                                # self.p = self.p + self.q
-                                # print(self.kalman_gain)
-                                #------------------------------------------------------------------------------------------
-                                # print(self.current_x)
-                                # print(self.current_y)
                                 f = open('uwb.txt', 'a')
                                 f.write(f'{str(mu_current[0]) + "," +str(mu_current[1])}')
                                 f.write('\n')
