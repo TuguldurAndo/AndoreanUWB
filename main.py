@@ -1,14 +1,17 @@
+from itertools import count
 from logging import StringTemplateStyle
+from turtle import color
 import kivy
 import random
 from kivy.utils import rgba
-import mysql.connector
+#import mysql.connector
 import json
 import time
 import serial
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 
 kivy.require('1.0.6') # replace with your current kivy version !
+import matplotlib.pyplot as plt
 import numpy as np
 from kivy.app import App
 from kivy.clock import Clock
@@ -20,63 +23,28 @@ from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.animation import Animation
 from kivy.uix.screenmanager import Screen
-
+from kivy_garden.graph import Graph, MeshLinePlot
 from Popup.anchor_info_pp import AnchorInfoPopup
 from kivy.config import Config
+from math import sin
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
+from win32api import GetSystemMetrics
+from ctypes import windll
+w0 = GetSystemMetrics(0)
+h0 = GetSystemMetrics(1)
+windll.user32.SetProcessDPIAware()
+w1 = GetSystemMetrics(0)
+h1 = GetSystemMetrics(1)
+sf_w = w1/w0
+sf_h = h1/h0
+
 #----------------------------------------------------------------------
-
-Config.set('graphics','resizable',0)
 Window.clearcolor = (0.95, 0.95, 0.95, 1)
-Window.size = (800, 600)
-
-serial_port = serial.Serial(
-    port="/dev/ttyTHS0",
-    baudrate=115200,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-)
-
-mu_0 = np.array([0, 0])
-Sigma_0 = np.array([[0.1, 0],
-                     [0, 0.1]])
-u_t = np.array([1, 1]) # we assume constant control input
-
-A = np.array([[0.81, 0],
-              [0, 0.81]])
-B = np.array([[0.3, 0],
-              [0, 0.3]])
-Q = np.array([[0.2, 0],
-              [0, 0.2]])
-H = np.array([[1, 0],
-              [0, 1]])
-R = np.array([[1, 0],
-              [0, 1]])
-
-# Initialize empty lists to store the filtered states and measurements for plotting
-measurement_states = []
-filtered_states = []
-
-# state = [x_pos, y_pos]
-num_steps = 10
-ground_truth_xs = np.linspace(0, 10, num=num_steps + 1) # [0, 1, ..., 10]
-ground_truth_ys = ground_truth_xs.copy() # x = y
-ground_truth_states = np.stack((ground_truth_xs,ground_truth_ys), axis=1) # ground_truth_states is [[0,0], [1,1], ..., [10,10]]
-
-# Run KF for each time step
-mu_current = mu_0.copy()
-Sigma_current = Sigma_0.copy()
-
-#mydb = mysql.connector.connect(
- # host="localhost",
- # user="root",
- # password="Tuguldur#123",
- # database="andorean",
-#)
-
-#mycursor = mydb.cursor()
-
-#print(mydb)
+Config.set('graphics', 'resizable', 0)
+# Window.fullscreen = 'auto'
+Window.borderless = False
+Window.resizable = False
+Window.size = (1200, 800)
 
 counter = 0
 counter_1 = 0
@@ -85,10 +53,15 @@ tag_counter = 0
 addresses = []
 objAddress = []
 led_pin = 18
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(led_pin, GPIO.OUT)
-
+serial_port = serial.Serial(
+    port="COM3",
+    baudrate=115200,
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+)
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(led_pin, GPIO.OUT)
 class anchors:
     def __init__(self, id, type, x, y, z, pwr):
         self.id = id
@@ -104,42 +77,42 @@ class MainScreen(Screen):
         self.connection_status = False
         self.scale = 0.1
         self.in_danger = False
-        self.filter_x = 0
-        self.filter_y = 0
         self.filter_counter = 0
         self.sensor_noise = 0
-
+        self.graph_viewer = False
+        self.plt = 0
 
     def rst_anchor(self, *args):
         global counter_1, counter
-        main_layout = self.ids.main_layout
+        main_layout = self.ids.main_layout 
         main_layout.clear_widgets()
+        self.ids.boxlayout.clear_widgets()
         self.ids.tag_info_table.clear_widgets()
         self.ids.anchor_info_table.clear_widgets()
         counter = 0
         counter_1 = 0
         objAddress.clear()
         addresses.clear()
+        plt.clf()
         Clock.unschedule(self.get_uart_data)
         self.ids.connect_btn.text = "Connect"
         self.ids.connect_btn.disabled = False
+        self.graph_viewer = False
 
     def connect_spi(self, *args):
         global live_tag, counter_1, tag_counter
-        objAddress.append( anchors('00', "anchor", 0, 0, 0, 0))
-        self.create_elements(objAddress[0])
-
+        # objAddress.append( anchors('00', "anchor", 0, 0, 0, 0))
+        # self.create_elements(objAddress[0])
         Clock.schedule_interval(self.get_uart_data, 0.01)
-        Clock.schedule_interval(self.update_table, 5)
+        Clock.schedule_interval(self.update_table, 0.01)
 
     def get_uart_data(self, *args):
         global counter_1, tag_counter
-        main_layout = self.ids.main_layout
         if serial_port.inWaiting() > 0:
-                data = serial_port.readline().decode('ascii')
+                data = serial_port.readline().decode('utf-8')
                 print(data)
                 stm32Receiver = self.is_json(data)
-
+                main_layout = self.ids.main_layout
                 self.ids.connect_btn.text = "Connected"
                 self.ids.connect_btn.disabled = True
 
@@ -161,28 +134,13 @@ class MainScreen(Screen):
 
                             if item.id == stm32Receiver["id"]:
 
-                                self.filter_x = self.filter_x + float(stm32Receiver["x"])
-                                self.filter_y = self.filter_y + float(stm32Receiver["y"])
-
-                                self.filter_counter += 1
-
-                                #if self.filter_counter == 5:
-                                    #print(self.filter_x/5)
-                                    #print(self.filter_y/5)
-                                    #self.filter_counter = 0
-                                    #f = open('uwb.txt', 'a')
-                                    #f.write(f'{str(self.filter_uwb/10)}')
-                                    #f.write('\n')
-                                    #f.close()
-                                    #------- Add table items ----------
-                                    #item.x = self.filter_x/5
-                                    #item.y = self.filter_y/5
                                 item.x = float(stm32Receiver["x"])
                                 item.y = float(stm32Receiver["y"])
+
                                 tag_counter = tag_counter + 1
 
-                                if tag_counter >= 10:
-                                    main_layout.remove_widget(self.ids[str(tag_counter - 9)])
+                                # if tag_counter >= 10:
+                                #     main_layout.remove_widget(self.ids[str(tag_counter - 9)])
 
                                 lbl = Label(
                                     text = '.',
@@ -191,54 +149,50 @@ class MainScreen(Screen):
                                     color=rgba("#ff4242"),
                                     font_size=50
                                     )
-                                self.ids[str(tag_counter)] = lbl
+                                self.ids[str(tag_counter)] = lbl 
                                 main_layout.add_widget(lbl)
 
-                                if float(item.x) < 10:
-                                    self.scale = 0.1
-                                else:
-                                    self.scale = 0.05
+                                self.scale = 0.2
 
-                                global predicted_mu, predicted_Sigma, mu_current, Sigma_current
-                                # Predict step
-                                predicted_mu, predicted_Sigma = predict(A, B, Q, u_t, mu_current, Sigma_current)
-                                
-                                # Get measurement (in real life, we get this from our sensor)    
-                                measurement_noise = [item.x, item.y]
-                                new_measurement = H @ measurement_noise # this is z_t
-                                
-                                # The rest of update step
-                                mu_current, Sigma_current = update(H, R, new_measurement, predicted_mu, predicted_Sigma)
-                                
-                                # Store measurements and mu_current so we can plot it later
-                                measurement_states.append(new_measurement)
-                                filtered_states.append(mu_current)
-
-                                print(mu_current)
-
+                                mu_current = [item.x, item.y]
 
                                 #------------------------------------ Kalman ----------------------------------------------
-                                f = open('uwb.txt', 'a')
-                                f.write(f'{str(mu_current[0]) + "," +str(mu_current[1])}')
-                                f.write('\n')
-                                f.close()
-                                f = open('uwb_1.txt', 'a')
-                                f.write(f'{str(item.x) + "," +str(item.y)}')
-                                f.write('\n')
-                                f.close()
+                                # f = open('uwb.txt', 'a')
+                                # f.write(f'{str(float(stm32Receiver["a"])) + "," +str(float(stm32Receiver["b"]))}')
+                                # f.write('\n')
+                                # f.close()
+                                # f = open('uwb_1.txt', 'a')
+                                # f.write(f'{str(item.x) + "," +str(item.y)}')
+                                # f.write('\n')
+                                # f.close()
                                 self.btn_animation({'x': (float(mu_current[0])*self.scale), 'y': (int(mu_current[1])*.1)}, str(item.id))
                                 self.btn_animation({'x': float(mu_current[0])*self.scale - .460, 'y': int(mu_current[1])*.1  - .11}, str(item.id) + str("label"))
                                 self.btn_animation({'x': float(mu_current[0])*self.scale - .460, 'y': int(mu_current[1])*.1  + .026}, str(item.id) + str("text"))
                                 self.ids[str(item.id) + str("label")].text = str(round(mu_current[0],2)) + ',' + str(round(mu_current[1],2))
+                                
+                                if self.graph_viewer is False:
+                                    self.ids.boxlayout.clear_widgets()
+                                    plt.scatter(item.x, item.y, color="black")
+                                    plt.xlabel("X Label")
+                                    plt.ylabel("Y Label")
+                                    self.ids.boxlayout.add_widget(FigureCanvasKivyAgg(plt.gcf()))
 
-                                self.filter_x = 0
-                                self.filter_y = 0
+    def change_graph_viewer(self, value):
+        if value == 0:
+            self.ids.plot_view.disabled = False
+            self.ids.dynamic_view.disabled = True
+            self.graph_viewer = False
+        else:
+            self.ids.boxlayout.clear_widgets()
+            self.ids.plot_view.disabled = True
+            self.ids.dynamic_view.disabled = False
+            self.graph_viewer = True
 
     def danger(self):
         global led_pin
         self.in_danger = True if self.in_danger is False else False
         self.ids.in_danger.text = "DANGER!" if self.in_danger is True else "DANGER"
-        GPIO.output(led_pin, self.in_danger)
+        #GPIO.output(led_pin, self.in_danger)
 
     def update_table(self, *args):
         self.ids.tag_info_table.clear_widgets()
@@ -358,21 +312,7 @@ with open("Popup/kv/anchor_info_popup.kv", encoding='utf8') as f:
 
 with open("Pages/main.kv", encoding='utf8') as f:
     mainPage = Builder.load_string(f.read())
-    f.close()
-
-
-def predict(A, B, Q, u_t, mu_t, Sigma_t):
-    predicted_mu = A @ mu_t + B @ u_t
-    predicted_Sigma = A @ Sigma_t @ A.T + Q
-    return predicted_mu, predicted_Sigma
-
-def update(H, R, z, predicted_mu, predicted_Sigma):
-    residual_mean = z - H @ predicted_mu
-    residual_covariance = H @ predicted_Sigma @ H.T + R
-    kalman_gain = predicted_Sigma @ H.T @ np.linalg.inv(residual_covariance)
-    updated_mu = predicted_mu + kalman_gain @ residual_mean
-    updated_Sigma = predicted_Sigma - kalman_gain @ H @ predicted_Sigma
-    return updated_mu, updated_Sigma
+    f.close()  
 
 class MyApp(App):
 

@@ -11,7 +11,8 @@ ScreenManager:
 <MainScreen>:
     name:"Main"
     FloatLayout:
-        size_hint: .6, .8
+        size_hint: None, None
+        size: 700, 600
         pos_hint: {'x': .025, 'y': .175}
         canvas:
             Color:
@@ -26,9 +27,51 @@ ScreenManager:
             size_hint: .95, .95
             pos_hint: {'x': 0.025, 'y': 0.025}
 
+            BoxLayout:
+                orientation: 'vertical'
+                id: boxlayout
+                size_hint: 1.05, 1.05
+                pos: root.width*0.025, root.width*0.115
+
+    FloatLayout: 
+        size_hint: .2, .075
+        pos_hint: {'x': .015, 'y': .925}
+        Button:
+            id: dynamic_view
+            background_color: 0,0,0,0
+            pos_hint: {'x': 0.05, 'y': 0.125}
+            size_hint: .45, .7
+            text: 'DYNAMIC'
+            disabled: True
+            on_press:
+                root.change_graph_viewer(0)
+            canvas.before:
+                Color:
+                    rgba: rgba('#82b6d9')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        Button:
+            id: plot_view
+            background_color: 0,0,0,0
+            pos_hint: {'x': 0.6, 'y': 0.125}
+            size_hint: .45, .7
+            text: 'PLOT'
+            on_press:
+                root.change_graph_viewer(1)
+            canvas.before:
+                Color:
+                    rgba: rgba('#82b6d9')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+
+
     FloatLayout:
         size_hint: .325, .3
-        pos_hint: {'x': .65, 'y': .675}
+        pos_hint: {'x': .65, 'y': .575}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -78,7 +121,7 @@ ScreenManager:
 
     FloatLayout:
         size_hint: .325, .3
-        pos_hint: {'x': .65, 'y': .35}
+        pos_hint: {'x': .65, 'y': .15}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
