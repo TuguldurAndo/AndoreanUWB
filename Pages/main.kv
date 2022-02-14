@@ -2,12 +2,18 @@ ScreenManager:
     MainScreen:
         id: main_screen
 
+<SpinnerOption>:
+    color: 0,0,0,1
+    background_normal: ''
+    background_color: .9, .9, .9, .3
+    font_size: 25
+
 <MainScreen>:
     name:"Main"
     FloatLayout:
-        id: main_layout
-        size_hint: .6, .8
-        pos_hint: {'x': .05, 'y': .1}
+        size_hint: None, None
+        size: 700, 600
+        pos_hint: {'x': .025, 'y': .175}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -16,24 +22,207 @@ ScreenManager:
                 pos: self.pos
                 radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
 
-    FloatLayout:
-        size_hint: .2, .2
-        pos_hint: {'x': .7, 'y': .4}
+        FloatLayout:
+            id: main_layout
+            size_hint: .95, .95
+            pos_hint: {'x': 0.025, 'y': 0.025}
 
+            BoxLayout:
+                orientation: 'vertical'
+                id: boxlayout
+                size_hint: 1.05, 1.05
+                pos: root.width*0.025, root.width*0.115
+
+    FloatLayout: 
+        size_hint: .2, .075
+        pos_hint: {'x': .015, 'y': .925}
         Button:
-            id: add_widget_btn
+            id: dynamic_view
+            background_color: 0,0,0,0
+            pos_hint: {'x': 0.05, 'y': 0.125}
+            size_hint: .45, .7
+            text: 'DYNAMIC'
+            disabled: True
+            on_press:
+                root.change_graph_viewer(0)
+            canvas.before:
+                Color:
+                    rgba: rgba('#82b6d9')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+        Button:
+            id: plot_view
+            background_color: 0,0,0,0
+            pos_hint: {'x': 0.6, 'y': 0.125}
+            size_hint: .45, .7
+            text: 'PLOT'
+            on_press:
+                root.change_graph_viewer(1)
+            canvas.before:
+                Color:
+                    rgba: rgba('#82b6d9')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+
+
+    FloatLayout:
+        size_hint: .325, .3
+        pos_hint: {'x': .65, 'y': .575}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+        GridLayout:
+            size_hint: 1, 1
+            pos_hint: {'x': -.01, 'y': .3}
+            height: 25
+            cols: 7
+            Label:
+                text: "ID"
+                color: 0,0,0,1
+            Label:
+                text: "X(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Y(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Z(m)"
+                color: 0,0,0,1
+                canvas.before:
+                    Color:
+                        rgba: 0,0,0,1
+                    Line:
+                        width: 1.1
+                        points: self.center_x - 210,self.center_y - 15,self.center_x+30,self.center_y - 15
+        Label:
+            size: 1,1
+            pos_hint: {'x': -.35, 'y': .44}
+            text: "Anchor info"
+            color: 0,0,0,0.6
+            bold: True
+
+        ScrollView:
+            size_hint: 1, .7
             pos_hint: {'x': 0, 'y': 0}
-            size_hint: .7, .3
-            text: 'Start'
-            on_press: 
-                root.add_anchor()
+            GridLayout:
+                cols: 4
+                id: anchor_info_table
+                size_hint_y: None
+                height: self.minimum_height
+                row_default_height: 30
+
+    FloatLayout:
+        size_hint: .325, .3
+        pos_hint: {'x': .65, 'y': .15}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+        GridLayout:
+            size_hint: 1, 1
+            pos_hint: {'x': 0, 'y': 0.3}
+            height: 1
+            cols: 5
+            Label:
+                text: "ID"
+                color: 0,0,0,1
+            Label:
+                text: "X(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Y(m)"
+                color: 0,0,0,1
+            Label:
+                text:"Z(m)"
+                color: 0,0,0,1
+            Label:
+                text:"PWR"
+                color: 0,0,0,1
+                canvas.before:
+                    Color:
+                        rgba: 0,0,0,1
+                    Line:
+                        width: 1.1
+                        points: self.center_x - 220,self.center_y - 15,self.center_x+15,self.center_y - 15
+
+        ScrollView:
+            size_hint: 1, .7
+            pos_hint: {'x': 0, 'y': 0}
+            GridLayout:
+                cols: 5
+                id: tag_info_table
+                size_hint_y: None
+                height: self.minimum_height  #<<<<<<<<<<<<<<<<<<<<
+                row_default_height: 30
+
+        Label:
+            size: 1,1
+            pos_hint: {'x': -.375, 'y': .44}
+            text: "Tag info"
+            color: 0,0,0,0.6
+            bold: True
+#----------------------------------------- Serial port section --------------------------------------
+    FloatLayout:
+        size_hint: .1, .075
+        pos_hint: {'x': .535, 'y': .1}
+#---------------------------------------------------------------------------------------------------
+        Button:
+            background_color: 0,0,0,0
+            id: connect_btn
+            size_hint: (.8, .7) if self.text == "Connect"  else (.9, .7)
+            pos_hint: {'x': .0, 'y': .125}
+            text: 'Connect'
+            background_down: ""
+            on_press:
+                root.connect_spi()
+            canvas.before:
+                Color:
+                    rgba: rgba('#03befc') if self.text == "Connect"  else rgba('#b8b8b8')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
 
         Button:
             id: rst_widget
-            pos_hint: {'x': 0, 'y': 0.4}
-            size_hint: .7, .3
-            text: 'Reset'
-            on_press: 
+            background_color: 0,0,0,0
+            pos_hint: {'x': -0.9, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'Stop'
+            on_press:
                 root.rst_anchor()
+            canvas.before:
+                Color:
+                    rgba: rgba('#f54e42')
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
 
+        Button:
+            id: in_danger
+            background_color: 0,0,0,0
+            pos_hint: {'x': -1.8, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'DANGER'
+            on_press:
+                root.danger()
+            canvas.before:
+                Color:
+                    rgba: rgba('#eb8f34') if self.text == "DANGER" else rgba("#adadad")
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
 

@@ -1,18 +1,15 @@
-from itertools import count
 from logging import StringTemplateStyle
-from turtle import color
 import kivy
 import random
 from kivy.utils import rgba
-#import mysql.connector
+import mysql.connector
 import json
 import time
 import serial
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 kivy.require('1.0.6') # replace with your current kivy version !
-import matplotlib.pyplot as plt
-import numpy as np
+
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -23,28 +20,32 @@ from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.animation import Animation
 from kivy.uix.screenmanager import Screen
-from kivy_garden.graph import Graph, MeshLinePlot
+
 from Popup.anchor_info_pp import AnchorInfoPopup
 from kivy.config import Config
-from math import sin
-from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
-from win32api import GetSystemMetrics
-from ctypes import windll
-w0 = GetSystemMetrics(0)
-h0 = GetSystemMetrics(1)
-windll.user32.SetProcessDPIAware()
-w1 = GetSystemMetrics(0)
-h1 = GetSystemMetrics(1)
-sf_w = w1/w0
-sf_h = h1/h0
 
-#----------------------------------------------------------------------
+Config.set('graphics','resizable',0)
 Window.clearcolor = (0.95, 0.95, 0.95, 1)
-Config.set('graphics', 'resizable', 0)
-# Window.fullscreen = 'auto'
-Window.borderless = False
-Window.resizable = False
-Window.size = (1200, 800)
+Window.size = (800, 600)
+
+serial_port = serial.Serial(
+    port="/dev/ttyTHS0",
+    baudrate=115200,
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+)
+
+#mydb = mysql.connector.connect(
+ # host="localhost",
+ # user="root",
+ # password="Tuguldur#123",
+ # database="andorean",
+#)
+
+#mycursor = mydb.cursor()
+
+#print(mydb)
 
 counter = 0
 counter_1 = 0
@@ -53,15 +54,10 @@ tag_counter = 0
 addresses = []
 objAddress = []
 led_pin = 18
-serial_port = serial.Serial(
-    port="COM3",
-    baudrate=115200,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-)
-#GPIO.setmode(GPIO.BCM)
-#GPIO.setup(led_pin, GPIO.OUT)
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(led_pin, GPIO.OUT)
+
 class anchors:
     def __init__(self, id, type, x, y, z, pwr):
         self.id = id
@@ -77,42 +73,39 @@ class MainScreen(Screen):
         self.connection_status = False
         self.scale = 0.1
         self.in_danger = False
+        self.filter_uwb = 0
         self.filter_counter = 0
-        self.sensor_noise = 0
-        self.graph_viewer = False
-        self.plt = 0
 
     def rst_anchor(self, *args):
         global counter_1, counter
-        main_layout = self.ids.main_layout 
+        main_layout = self.ids.main_layout
         main_layout.clear_widgets()
-        self.ids.boxlayout.clear_widgets()
         self.ids.tag_info_table.clear_widgets()
         self.ids.anchor_info_table.clear_widgets()
         counter = 0
         counter_1 = 0
         objAddress.clear()
         addresses.clear()
-        plt.clf()
         Clock.unschedule(self.get_uart_data)
         self.ids.connect_btn.text = "Connect"
         self.ids.connect_btn.disabled = False
-        self.graph_viewer = False
 
     def connect_spi(self, *args):
         global live_tag, counter_1, tag_counter
-        # objAddress.append( anchors('00', "anchor", 0, 0, 0, 0))
-        # self.create_elements(objAddress[0])
+        objAddress.append( anchors('00', "anchor", 0, 0, 0, 0))
+        self.create_elements(objAddress[0])
+
         Clock.schedule_interval(self.get_uart_data, 0.01)
-        Clock.schedule_interval(self.update_table, 0.01)
+        Clock.schedule_interval(self.update_table, 5)
 
     def get_uart_data(self, *args):
         global counter_1, tag_counter
+        main_layout = self.ids.main_layout
         if serial_port.inWaiting() > 0:
-                data = serial_port.readline().decode('utf-8')
+                data = serial_port.readline().decode('ascii')
                 print(data)
                 stm32Receiver = self.is_json(data)
-                main_layout = self.ids.main_layout
+
                 self.ids.connect_btn.text = "Connected"
                 self.ids.connect_btn.disabled = True
 
@@ -122,11 +115,13 @@ class MainScreen(Screen):
 
                         addresses.append(stm32Receiver["id"])
 
-                        objAddress.append(anchors(stm32Receiver["id"], "tag", stm32Receiver["x"], stm32Receiver["y"], 0, 0))
-                        lastElement = objAddress[-1]
+                        if stm32Receiver["error"] is False:
 
-                        # --------------------------------------------------------------------
-                        self.create_elements(lastElement)
+                            objAddress.append(anchors(stm32Receiver["id"], "tag", stm32Receiver["distance"], 0, 0, 0))
+                            lastElement = objAddress[-1]
+
+                            # --------------------------------------------------------------------
+                            self.create_elements(lastElement)
 
                     else: 
 
@@ -134,65 +129,52 @@ class MainScreen(Screen):
 
                             if item.id == stm32Receiver["id"]:
 
-                                item.x = float(stm32Receiver["x"])
-                                item.y = float(stm32Receiver["y"])
+                                if stm32Receiver["error"] is False:
 
-                                tag_counter = tag_counter + 1
+                                    self.filter_uwb = self.filter_uwb + float(stm32Receiver["distance"])
+                                    self.filter_counter += 1
 
-                                # if tag_counter >= 10:
-                                #     main_layout.remove_widget(self.ids[str(tag_counter - 9)])
+                                    if self.filter_counter == 10:
+                                        print(self.filter_uwb/10)
+                                        self.filter_counter = 0
+                                        f = open('uwb.txt', 'a')
+                                        f.write(f'{str(self.filter_uwb/10)}')
+                                        f.write('\n')
+                                        f.close()
+                                        #------- Add table items ----------
+                                        item.x = self.filter_uwb/10
+                                        tag_counter = tag_counter + 1
 
-                                lbl = Label(
-                                    text = '.',
-                                    size_hint=(.1, .15),
-                                    pos_hint=self.ids[item.id].pos_hint,
-                                    color=rgba("#ff4242"),
-                                    font_size=50
-                                    )
-                                self.ids[str(tag_counter)] = lbl 
-                                main_layout.add_widget(lbl)
+                                        if tag_counter >= 10:
+                                            main_layout.remove_widget(self.ids[str(tag_counter - 9)])
 
-                                self.scale = 0.2
+                                        lbl = Label(
+                                            text = '.',
+                                            size_hint=(.1, .15),
+                                            pos_hint=self.ids[item.id].pos_hint,
+                                            color=rgba("#ff4242"),
+                                            font_size=50
+                                            )
+                                        self.ids[str(tag_counter)] = lbl
+                                        main_layout.add_widget(lbl)
 
-                                mu_current = [item.x, item.y]
+                                        if float(item.x) < 10:
+                                            self.scale = 0.1
+                                        else:
+                                            self.scale = 0.05
 
-                                #------------------------------------ Kalman ----------------------------------------------
-                                # f = open('uwb.txt', 'a')
-                                # f.write(f'{str(float(stm32Receiver["a"])) + "," +str(float(stm32Receiver["b"]))}')
-                                # f.write('\n')
-                                # f.close()
-                                # f = open('uwb_1.txt', 'a')
-                                # f.write(f'{str(item.x) + "," +str(item.y)}')
-                                # f.write('\n')
-                                # f.close()
-                                self.btn_animation({'x': (float(mu_current[0])*self.scale), 'y': (int(mu_current[1])*.1)}, str(item.id))
-                                self.btn_animation({'x': float(mu_current[0])*self.scale - .460, 'y': int(mu_current[1])*.1  - .11}, str(item.id) + str("label"))
-                                self.btn_animation({'x': float(mu_current[0])*self.scale - .460, 'y': int(mu_current[1])*.1  + .026}, str(item.id) + str("text"))
-                                self.ids[str(item.id) + str("label")].text = str(round(mu_current[0],2)) + ',' + str(round(mu_current[1],2))
-                                
-                                if self.graph_viewer is False:
-                                    self.ids.boxlayout.clear_widgets()
-                                    plt.scatter(item.x, item.y, color="black")
-                                    plt.xlabel("X Label")
-                                    plt.ylabel("Y Label")
-                                    self.ids.boxlayout.add_widget(FigureCanvasKivyAgg(plt.gcf()))
+                                        self.btn_animation({'x': (float(item.x)*self.scale), 'y': (int(item.y)*.1 + .01)}, str(item.id))
+                                        self.btn_animation({'x': float(item.x)*self.scale - .460, 'y': int(item.y)*.001  - .1}, str(item.id) + str("label"))
+                                        self.btn_animation({'x': float(item.x)*self.scale - .460, 'y': int(item.y)*.001  + .025}, str(item.id) + str("text"))
+                                        self.ids[str(item.id) + str("label")].text = str(round(item.x,2)) + ',' + str(item.y)
 
-    def change_graph_viewer(self, value):
-        if value == 0:
-            self.ids.plot_view.disabled = False
-            self.ids.dynamic_view.disabled = True
-            self.graph_viewer = False
-        else:
-            self.ids.boxlayout.clear_widgets()
-            self.ids.plot_view.disabled = True
-            self.ids.dynamic_view.disabled = False
-            self.graph_viewer = True
+                                        self.filter_uwb = 0
 
     def danger(self):
         global led_pin
         self.in_danger = True if self.in_danger is False else False
         self.ids.in_danger.text = "DANGER!" if self.in_danger is True else "DANGER"
-        #GPIO.output(led_pin, self.in_danger)
+        GPIO.output(led_pin, self.in_danger)
 
     def update_table(self, *args):
         self.ids.tag_info_table.clear_widgets()
@@ -312,7 +294,7 @@ with open("Popup/kv/anchor_info_popup.kv", encoding='utf8') as f:
 
 with open("Pages/main.kv", encoding='utf8') as f:
     mainPage = Builder.load_string(f.read())
-    f.close()  
+    f.close()
 
 class MyApp(App):
 
