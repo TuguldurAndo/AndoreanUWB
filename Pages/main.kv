@@ -12,8 +12,8 @@ ScreenManager:
     name:"Main"
     FloatLayout:
         size_hint: None, None
-        size: 700, 600
-        pos_hint: {'x': .025, 'y': .175}
+        size: 650, 650
+        pos_hint: {'x': .025, 'y': .1}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -27,15 +27,18 @@ ScreenManager:
             size_hint: .95, .95
             pos_hint: {'x': 0.025, 'y': 0.025}
 
+        FloatLayout:
+            size_hint: .95, .95
+            pos_hint: {'x': 0.025, 'y': 0.025}
             BoxLayout:
                 orientation: 'vertical'
                 id: boxlayout
                 size_hint: 1.05, 1.05
-                pos: root.width*0.025, root.width*0.115
+                pos: root.width*0.025, root.width*0.07
 
     FloatLayout: 
         size_hint: .2, .075
-        pos_hint: {'x': .015, 'y': .925}
+        pos_hint: {'x': .015, 'y': .92}
         Button:
             id: dynamic_view
             background_color: 0,0,0,0
@@ -47,7 +50,7 @@ ScreenManager:
                 root.change_graph_viewer(0)
             canvas.before:
                 Color:
-                    rgba: rgba('#82b6d9')
+                    rgba: rgba('#03befc')
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
@@ -62,7 +65,7 @@ ScreenManager:
                 root.change_graph_viewer(1)
             canvas.before:
                 Color:
-                    rgba: rgba('#82b6d9')
+                    rgba: rgba('#03befc')
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
@@ -71,7 +74,7 @@ ScreenManager:
 
     FloatLayout:
         size_hint: .325, .3
-        pos_hint: {'x': .65, 'y': .575}
+        pos_hint: {'x': .645, 'y': .615}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -101,7 +104,7 @@ ScreenManager:
                         rgba: 0,0,0,1
                     Line:
                         width: 1.1
-                        points: self.center_x - 210,self.center_y - 15,self.center_x+30,self.center_y - 15
+                        points: self.center_x - 290,self.center_y - 15,self.center_x+30,self.center_y - 15
         Label:
             size: 1,1
             pos_hint: {'x': -.35, 'y': .44}
@@ -121,7 +124,7 @@ ScreenManager:
 
     FloatLayout:
         size_hint: .325, .3
-        pos_hint: {'x': .65, 'y': .15}
+        pos_hint: {'x': .645, 'y': .3}
         canvas:
             Color:
                 rgba: rgba("#ffffff")
@@ -154,7 +157,7 @@ ScreenManager:
                         rgba: 0,0,0,1
                     Line:
                         width: 1.1
-                        points: self.center_x - 220,self.center_y - 15,self.center_x+15,self.center_y - 15
+                        points: self.center_x - 300,self.center_y - 15,self.center_x+20,self.center_y - 15
 
         ScrollView:
             size_hint: 1, .7
@@ -172,10 +175,41 @@ ScreenManager:
             text: "Tag info"
             color: 0,0,0,0.6
             bold: True
+
+    FloatLayout:
+        size_hint: .325, .23
+        pos_hint: {'x': .645, 'y': .05}
+        canvas:
+            Color:
+                rgba: rgba("#ffffff")
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: root.width*0.01,root.width*0.01,root.width*0.01,root.width*0.01
+        TextInput:
+            id: console_print
+            size_hint: 0.95, 0.9
+            pos_hint: {'x': 0.01, 'y': 0.01}
+            background_normal: ''
+            background_disabled_normal: ''
+            background_color: 1,1,1,1
+            readonly: True 
+            multiline: True
+            disabled: False
+            font_size: 13
+
+        Label:
+            size: 1,1
+            pos_hint: {'x': -.35, 'y': .44}
+            text: "Console"
+            color: 0,0,0,0.6
+            bold: True
+
+
 #----------------------------------------- Serial port section --------------------------------------
     FloatLayout:
         size_hint: .1, .075
-        pos_hint: {'x': .535, 'y': .1}
+        pos_hint: {'x': .205, 'y': .02}
 #---------------------------------------------------------------------------------------------------
         Button:
             background_color: 0,0,0,0
@@ -221,6 +255,38 @@ ScreenManager:
             canvas.before:
                 Color:
                     rgba: rgba('#eb8f34') if self.text == "DANGER" else rgba("#adadad")
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+
+        
+        Button:
+            id: write_txt_btn
+            background_color: 0,0,0,0
+            pos_hint: {'x': 2.35, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'WRITE'
+            on_press:
+                root.write_value_to_file()
+            canvas.before:
+                Color:
+                    rgba: rgba('#e67e7e') if self.text == "WRITE" else rgba("#adadad")
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [10]
+
+        Button:
+            background_color: 0,0,0,0
+            pos_hint: {'x': 3.25, 'y': 0.125}
+            size_hint: .8, .7
+            text: 'PORT'
+            on_press:
+
+            canvas.before:
+                Color:
+                    rgba: rgba('#e67e7e') if self.text == "DANGER" else rgba("#adadad")
                 RoundedRectangle:
                     size: self.size
                     pos: self.pos
