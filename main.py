@@ -68,6 +68,7 @@ class MainScreen(Screen):
         self.in_danger = False
         self.filter_counter = 0
         self.graph_viewer = True
+        self.console_data = ''
         self.connection_status = False
 
         open("filtered_value.txt", "w").close()
@@ -84,6 +85,7 @@ class MainScreen(Screen):
         self.ids.dynamic_view.disabled = True
         Clock.unschedule(self.get_uart_data)
         Clock.unschedule(self.update_table)
+        Clock.unschedule(self.write_console_data)
         self.ids.connect_btn.text = "CONNECT"
         self.ids.connect_btn.disabled = False
         self.ids.com_port_txt.disabled = False
@@ -110,6 +112,7 @@ class MainScreen(Screen):
                 )
             Clock.schedule_interval(self.get_uart_data, 0.01)
             Clock.schedule_interval(self.update_table, 0.01)
+            Clock.schedule_interval(self.write_console_data, .1)
             self.ids.com_port_txt.disabled = True
             self.ids.connect_btn.text = "CONNECTED"
             self.ids.error_port.text = "CONNECTED"
@@ -126,9 +129,8 @@ class MainScreen(Screen):
                 data = self.serial_port.readline().decode('utf-8')
                 # print(data)
                 main_layout = self.ids.main_layout
-                self.ids.console_print.text += str(data)
                 stm32Receiver = self.is_json(data)
-
+                self.console_data = data
                 if stm32Receiver is not False:
 
                     if ((stm32Receiver["id"] in addresses) is False):
@@ -142,7 +144,6 @@ class MainScreen(Screen):
                         self.create_elements(lastElement)
 
                     else: 
-
                         for item in objAddress:
 
                             if item.id == stm32Receiver["id"]:
@@ -210,6 +211,12 @@ class MainScreen(Screen):
             main_layout.clear_widgets()
             objAddress.clear()
             addresses.clear()
+
+    def write_console_data(self, *args):
+        if len(self.ids.console_print.text) < 2000:
+            self.ids.console_print.text += str(self.console_data)
+        else:
+            self.ids.console_print.text = ''
 
     def write_value_to_file(self):
         self.is_write_txt = True if self.is_write_txt is False else False
