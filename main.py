@@ -19,6 +19,7 @@ from kivy.uix.slider import Slider
 from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.animation import Animation
+from kivy.uix.dropdown import DropDown
 from kivy.uix.textinput import TextInput
 from kivy.uix.screenmanager import Screen
 from Popup.anchor_info_pp import AnchorInfoPopup
@@ -45,14 +46,6 @@ addresses = []
 objAddress = []
 led_pin = 18
 
-serial_port = serial.Serial(
-    port="COM3",
-    baudrate=115200,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-)
-
 #GPIO.setmode(GPIO.BCM)
 #GPIO.setup(led_pin, GPIO.OUT)
 class anchors:
@@ -69,6 +62,7 @@ class MainScreen(Screen):
         super(MainScreen, self).__init__(**kwargs)
         self.plt = 0
         self.scale = 0.1
+        self.serial_port = 0
         self.sensor_noise = 0
         self.is_write_txt = False
         self.in_danger = False
@@ -89,8 +83,13 @@ class MainScreen(Screen):
         self.ids.plot_view.disabled = False
         self.ids.dynamic_view.disabled = True
         Clock.unschedule(self.get_uart_data)
-        self.ids.connect_btn.text = "Connect"
+        Clock.unschedule(self.update_table)
+        self.ids.connect_btn.text = "CONNECT"
         self.ids.connect_btn.disabled = False
+        self.ids.com_port_txt.disabled = False
+        self.ids.rst_widget.disabled = True
+        self.ids.error_port.text = ''
+        self.serial_port.close()
         self.graph_viewer = True
         self.is_write_txt = False
         objAddress.clear()
@@ -101,19 +100,34 @@ class MainScreen(Screen):
         global live_tag, tag_counter
         # objAddress.append( anchors('00', "anchor", 0, 0, 0, 0))
         # self.create_elements(objAddress[0])
-        Clock.schedule_interval(self.get_uart_data, 0.01)
-        Clock.schedule_interval(self.update_table, 0.01)
+        try:
+            self.serial_port = serial.Serial(
+                    port=self.ids.com_port_txt.text,
+                    baudrate=115200,
+                    bytesize=serial.EIGHTBITS,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                )
+            Clock.schedule_interval(self.get_uart_data, 0.01)
+            Clock.schedule_interval(self.update_table, 0.01)
+            self.ids.com_port_txt.disabled = True
+            self.ids.connect_btn.text = "CONNECTED"
+            self.ids.error_port.text = "CONNECTED"
+            self.ids.error_port.color = rgba('#4ec786')
+            self.ids.connect_btn.disabled = True
+            self.ids.rst_widget.disabled = False
+        except serial.SerialException:
+            self.ids.error_port.text = "OPENNING ERROR"
+            self.ids.error_port.color = rgba('#c74e50')
 
     def get_uart_data(self, *args):
         global tag_counter
-        if serial_port.inWaiting() > 0:
-                data = serial_port.readline().decode('utf-8')
+        if self.serial_port.inWaiting() > 0:
+                data = self.serial_port.readline().decode('utf-8')
                 # print(data)
+                main_layout = self.ids.main_layout
                 self.ids.console_print.text += str(data)
                 stm32Receiver = self.is_json(data)
-                main_layout = self.ids.main_layout
-                self.ids.connect_btn.text = "Connected"
-                self.ids.connect_btn.disabled = True
 
                 if stm32Receiver is not False:
 
@@ -196,7 +210,6 @@ class MainScreen(Screen):
             main_layout.clear_widgets()
             objAddress.clear()
             addresses.clear()
-
 
     def write_value_to_file(self):
         self.is_write_txt = True if self.is_write_txt is False else False
